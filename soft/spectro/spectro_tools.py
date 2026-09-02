@@ -33,7 +33,7 @@ def plot_spectrum_panels(xaxis,data,num_panels=2):
         axs[i].grid(True)
 
 
-def read_raw_spectrum(fits_file,get_header=0):
+def read_raw_spectrum_2024(fits_file,get_header=0):
     # this is the current routine for reading AURELIE spectra
     # returns an index and the fluxes
     # Open the FITS file
@@ -47,6 +47,28 @@ def read_raw_spectrum(fits_file,get_header=0):
     if(get_header==1):
         return xaxis,data,header
 
+def read_raw_spectrum(fits_file,get_header=0):
+    # this is the current routine for reading AURELIE spectra
+    # returns an index and the fluxes
+    # Open the FITS file
+    hdulist = fits.open(fits_file)
+    header = hdulist[0].header
+    # squeeze() drops ALL singleton axes, so it self-adapts to (1,1,N),
+    # (1,N), (N,1), or already (N,) - instead of a fixed number of [0]'s
+    # that only works for one file format and breaks on others
+    data = np.squeeze(hdulist[0].data)
+    if data.ndim != 1:
+        raise ValueError(
+            f"{fits_file}: expected a 1D spectrum after squeezing, "
+            f"got shape {data.shape} (raw shape {hdulist[0].data.shape}). "
+            "This file may not be a single AURELIE spectrum."
+        )
+    xaxis = list(range(len(data)))
+    if(get_header==0):
+        return xaxis,data
+    if(get_header==1):
+        return xaxis,data,header
+        
 def write_fits_spectrum(target_file,data,header=[]):
     if(header==[]):
         hdu=fits.hdu.hdulist.PrimaryHDU([[data]])
